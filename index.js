@@ -3,10 +3,11 @@ const app = express();
 
 app.use(express.json());
 
-// app.use((req, res, next) => {
-// 	console.log("requête reçue");
-// 	next();
-// });
+app.use(function(req, res, next) {
+    console.log("Je fais un console.log à chaque requête", new Date().toDateString());
+    next(); // call the next function to execute the following routes
+    // if removed, the next route never fires
+  });
 
 const superHeros = [
   {
@@ -48,43 +49,46 @@ app.get("/heroes", (req, res) => {
 });
 
 // /heroes/:name
-
 app.get("/heroes/:name", (req, res) => {
-    const nameHero = superHeros.find((hero) => {
-		return (
-			hero.name === req.params.name  
-		);
-	});
-
-	res.json(nameHero);
-   
-    if (!nameHero) {
-        res.send({
-          message: " This hero is not exist",
-        });
-    }
+  const nameHero = superHeros.find((hero) => {
+    return (
+        hero.name === req.params.name
+    )
   });
 
+  res.json(nameHero);
+
+  if (!nameHero) {
+    res.send({
+      message: " This hero is not exist",
+    });
+  }
+});
 
 // /heroes/:name/powers
 app.get("/heroes/:name/powers", (req, res) => {
-    const powers = superHeros[req.params.name].power;  
-      
-    res.send({ 
-        powers,
-    });
-
+    const nameHero = superHeros.find((hero) => {
+        return hero.name === req.params.name;
+      });
+    
+      res.json(nameHero.power);
 });
 
 // /heroes POST "Ok, héros ajouté"
 app.post("/heroes", (req, res) => {
-    superHeros.push({
-		name: req.body.name,
-	});
-	res.send(`Ok, ${superHeros} ajouté `);
+  superHeros.push({
+    name: req.body.name,
+  });
+  res.send(`Ok, a hero ajouté `);
 });
 
 // transformName body
+app.put("/heroes", (req, res, next) => {
+    superHeros.push({
+      name: req.body.name.toLowerCase(),
+    });
+    res.send(name);
+  });
 
 // /heroes/:name/powers PATCH "Pouvoir ajouté !"
 
