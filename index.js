@@ -50,23 +50,39 @@ app.get("/heroes", (req, res) => {
 // /heroes/:name
 
 app.get("/heroes/:name", (req, res) => {
+    const nameHero = superHeros.find((hero) => {
+		return (
+			hero.name === req.params.name  
+		);
+	});
 
-    const nameHero = superHeros[req.params.name];
-
-    if (!name) {
+	res.json(nameHero);
+   
+    if (!nameHero) {
         res.send({
           message: " This hero is not exist",
         });
-      }
-
-	res.send(`${nameHero}`);
-
+    }
   });
 
 
 // /heroes/:name/powers
+app.get("/heroes/:name/powers", (req, res) => {
+    const powers = superHeros[req.params.name].power;  
+      
+    res.send({ 
+        powers,
+    });
+
+});
 
 // /heroes POST "Ok, héros ajouté"
+app.post("/heroes", (req, res) => {
+    superHeros.push({
+		name: req.body.name,
+	});
+	res.send(`Ok, ${superHeros} ajouté `);
+});
 
 // transformName body
 
