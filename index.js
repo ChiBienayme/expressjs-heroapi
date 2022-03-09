@@ -1,13 +1,38 @@
 const express = require("express");
 const app = express();
 
+// pour le body
 app.use(express.json());
 
-app.use(function(req, res, next) {
-    console.log("Je fais un console.log à chaque requête", new Date().toDateString());
-    next(); // call the next function to execute the following routes
-    // if removed, the next route never fires
+app.use(
+  function debug(_req, _res, next) {
+    console.log("Request received");
+    next();
+  }
+)
+
+// app.use(express.json(), debug)
+
+function transformName(req, _res, next) {
+  if (req.body.name) {
+    req.body.name = req.body.name.toLowerCase()
+  }
+  next()
+}
+
+function protect() {
+  // verifier si l'utisateur est connecte
+  return res.status(201).send("Login first")
+}
+
+
+function findHero(req, _res, next) {
+  const hero = superHeros.find((hero) => {
+    return hero.name.toLowerCase().replace(" ", "-") === req.params.name.toLowerCase().replace(" ", "-")
   });
+  req.hero = hero;
+  next();
+}
 
 const superHeros = [
   {
@@ -39,60 +64,78 @@ const superHeros = [
   },
 ];
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hero API");
 });
 
 //  /heroes
-app.get("/heroes", (req, res) => {
+app.get("/heroes", (_req, res) => {
   res.send(superHeros);
 });
 
 // /heroes/:name
 app.get("/heroes/:name", (req, res) => {
-  const nameHero = superHeros.find((hero) => {
+  const hero = superHeros.find((hero) => {
     return (
-        hero.name === req.params.name
+      // Iron Man -> iron man -> iron-man
+        hero.name.toLowerCase().replace(" ", "-") === req.params.name.toLowerCase().replace(" ", "-")
     )
   });
 
-  res.json(nameHero);
+  res.json(hero);
 
-  if (!nameHero) {
+  if (!hero) {
     res.send({
       message: " This hero is not exist",
     });
   }
 });
+//Test: Iron Man => Iron-Man or Iron%20Man
+
 
 // /heroes/:name/powers
-app.get("/heroes/:name/powers", (req, res) => {
-    const nameHero = superHeros.find((hero) => {
-        return hero.name === req.params.name;
-      });
+app.get("/heroes/:name/powers", findHero, (req, res) => {
+    // const hero = superHeros.find((hero) => {
+    //     return (
+    //       hero.name.toLowerCase().replace(" ", "-") === req.params.name.toLowerCase().replace(" ", "-")
+    //     ) 
+    //   });
     
-      res.json(nameHero.power);
+      res.json(req.hero.power);
 });
 
-// /heroes POST "Ok, héros ajouté"
-app.post("/heroes", (req, res) => {
-  superHeros.push({
-    name: req.body.name,
-  });
-  res.send(`Ok, a hero ajouté `);
-});
-
+// /heroes POST "Ok, héros ajouté" 
 // transformName body
-app.put("/heroes", (req, res, next) => {
-    superHeros.push({
-      name: req.body.name.toLowerCase(),
-    });
-    res.send(name);
+app.post("/heroes", protect, transformName, (req, res) => {
+  superHeros.push(req.body);
+
+  res.status(201).json({
+    message: "Ok, hero ajouté",
+    superHeros,
   });
+});
+
 
 // /heroes/:name/powers PATCH "Pouvoir ajouté !"
+app.patch("/heroes:name/powers", findHero, (req, res) => {
+  const hero = req.hero;
+  // const hero = superHeros.find((hero) => {
+  //     return (
+  //       hero.name.toLowerCase().replace(" ", "-") === req.params.name.toLowerCase().replace(" ", "-")
+  //     )
+  // });
+
+  hero.power.push(req.body.power);
+
+  res.json({
+    message: "Power added",
+    hero,
+  });
+})
 
 app.get("*", (req, res) => {
-  res.send("Page not found - 404");
+  res.status(404).send("Not found");
 });
+
+// Start server
 app.listen(8000, () => console.log("Listening..."));
